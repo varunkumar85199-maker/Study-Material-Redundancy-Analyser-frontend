@@ -1,16 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
+import re
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>StudySync — Smart PDF Analyzer</title>
+def update_html():
+    with open('inex.html', 'r', encoding='utf-8') as f:
+        content = f.read()
 
-  <link
-    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap"
-    rel="stylesheet" />
-
-  <style>
+    # 1. Update CSS
+    new_css = """<style>
     /* ROOT COLORS */
     :root {
       --bg: #0d0d12;
@@ -644,28 +639,11 @@
         gap: 12px;
       }
     }
-  </style>
-</head>
+  </style>"""
+    content = re.sub(r'<style>.*?</style>', new_css, content, flags=re.DOTALL)
 
-<body>
-
-  <!-- Background Blobs -->
-  <div class="blob blob1"></div>
-  <div class="blob blob2"></div>
-
-  <div class="wrapper">
-
-    <header>
-      <div class="logo">
-        <div class="logo-dot"></div> StudySync
-      </div>
-      <div class="status-pill" id="serverStatus">
-        <span>●</span> Checking...
-      </div>
-    </header>
-
-    <!-- Steps -->
-    <div class="steps">
+    # 2. Update Steps HTML
+    new_steps = """<div class="steps">
       <div class="steps-progress" id="stepsLine" style="width: 0%;"></div>
       <div class="step active" id="step1" onclick="goStep(1)">
         <div class="step-num">1</div>
@@ -686,232 +664,16 @@
         <div class="step-num">4</div>
         <div class="step-label">⬇️ Download</div>
       </div>
-    </div>
+    </div>"""
+    content = re.sub(r'<div class="steps">.*?</div>\s*</div>\s*</div>\s*</div>', new_steps, content, flags=re.DOTALL) # Need to be more robust
+    
+    # Better to find exactly the steps div:
+    steps_match = re.search(r'<div class="steps">(.*?)</div>\s*<!-- PANEL 1', content, flags=re.DOTALL)
+    if steps_match:
+        content = content[:steps_match.start()] + new_steps + '\n\n    <!-- PANEL 1' + content[steps_match.end():]
 
-    <!-- PANEL 1: UPLOAD -->
-    <div class="panel active" id="panel1">
-
-      <div class="section-title">Step 1 — PDF Upload Karein</div>
-
-      <div class="upload-area" id="dropZone">
-        <input type="file" id="fileInput" multiple accept=".pdf,.txt,.docx" onchange="handleFiles(this.files)">
-        <div class="upload-icon">📂</div>
-        <h3>Drag & Drop PDF Files</h3>
-        <p>Ya click karke select karein</p>
-        <div class="upload-types">
-          <span class="type-badge">PDF</span>
-          <span class="type-badge">DOCX</span>
-          <span class="type-badge">TXT</span>
-        </div>
-      </div>
-
-      <div class="file-list" id="fileList"></div>
-
-      <div style="margin-top:24px; display:flex; gap:12px;">
-        <button class="btn-primary" id="uploadBtn" onclick="uploadFiles()" disabled>
-          <span id="uploadBtnText">⬆ Upload</span>
-        </button>
-        <button class="btn-outline" id="demoBtn" onclick="loadDemo()">📋 Demo Load</button>
-      </div>
-
-    </div>
-
-    <!-- PANEL 2: ANALYZE -->
-    <div class="panel" id="panel2">
-      <div class="section-title">Step 2 — Topic Analysis</div>
-
-      <div id="topicsGrid" class="topics-container"></div>
-
-      <div style="margin-top: 24px;">
-        <button class="btn-primary" id="analyzeAgainBtn" onclick="goStep(1)">
-          ← Analyze Again
-        </button>
-        <button class="btn-primary" id="mergeBtn" onclick="goMergeStep()" disabled style="margin-left: 10px;">
-          <span id="mergeBtnText">⚡ Proceed to Merge</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- PANEL 3: MERGE & FORMAT SELECT -->
-    <div class="panel" id="panel3">
-      <div class="section-title">Step 3 — Generate Merged Notes</div>
-
-      <div class="format-select">
-        <div class="format-radio">
-          <input type="radio" id="formatPdf" name="format" value="pdf" checked>
-          <label for="formatPdf">📄 PDF Format</label>
-        </div>
-        <div class="format-radio">
-          <input type="radio" id="formatTxt" name="format" value="txt">
-          <label for="formatTxt">📝 TXT Format</label>
-        </div>
-      </div>
-
-      <div id="mergedGrid" class="topics-container"></div>
-
-      <button class="btn-primary" style="margin-top:20px;" id="downloadStepBtn" onclick="goStep(4)">
-        Next → Download
-      </button>
-    </div>
-
-    <!-- PANEL 4: DOWNLOAD -->
-    <div class="panel" id="panel4">
-      <div class="section-title">Step 4 — Download Your Notes</div>
-
-      <p style="color: var(--muted); margin-bottom: 20px;">
-        Your merged study notes are ready! Download in your preferred format.
-      </p>
-
-      <div>
-        <button class="btn-outline" id="downloadPdfBtn" onclick="downloadFile('merged_notes.pdf')">
-          <span id="pdfDownloadText">⬇ PDF Download</span>
-        </button>
-        <button class="btn-outline" id="downloadTxtBtn" onclick="downloadFile('merged_notes.txt')">
-          <span id="txtDownloadText">⬇ TXT Download</span>
-        </button>
-      </div>
-
-      <button class="btn-primary" style="margin-top: 20px;" onclick="resetApp()">
-        🔄 Start Over
-      </button>
-    </div>
-
-  </div>
-
-  <div id="toast"></div>
-
-  <script>
-
-    // ─────────────────────────────────────────
-    // CONFIGURATION
-    // ─────────────────────────────────────────
-
-    const API = "http://localhost:5000";
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-
-    // ─────────────────────────────────────────
-    // STATE MANAGEMENT
-    // ─────────────────────────────────────────
-
-    let uploadedFiles = [];
-    let serverFileNames = [];
-    let analyzedTopics = [];
-    let currentStep = 1;
-    let isLoading = false;
-
-    // ─────────────────────────────────────────
-    // INITIALIZATION
-    // ─────────────────────────────────────────
-
-    document.addEventListener("DOMContentLoaded", function () {
-      checkServerStatus();
-      setupDragAndDrop();
-      setInterval(checkServerStatus, 5000); // Check every 5 seconds
-    });
-
-    // ─────────────────────────────────────────
-    // SERVER STATUS CHECK
-    // ────────────────────��────────────────────
-
-    async function checkServerStatus() {
-      try {
-        const res = await fetch(API + "/upload", {
-          method: "POST",
-          body: new FormData()
-        });
-
-        const pill = document.getElementById("serverStatus");
-        pill.innerHTML = '<span>●</span> Connected';
-        pill.classList.remove("offline");
-      } catch (e) {
-        const pill = document.getElementById("serverStatus");
-        pill.innerHTML = '<span>●</span> Offline';
-        pill.classList.add("offline");
-      }
-    }
-
-    // ─────────────────────────────────────────
-    // DRAG AND DROP
-    // ─────────────────────────────────────────
-
-    function setupDragAndDrop() {
-      const zone = document.getElementById("dropZone");
-
-      zone.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        zone.classList.add("drag-over");
-      });
-
-      zone.addEventListener("dragleave", () => {
-        zone.classList.remove("drag-over");
-      });
-
-      zone.addEventListener("drop", (e) => {
-        e.preventDefault();
-        zone.classList.remove("drag-over");
-        handleFiles(e.dataTransfer.files);
-      });
-    }
-
-    // ─────────────────────────────────────────
-    // FILE HANDLING
-    // ─────────────────────────────────────────
-
-    function handleFiles(files) {
-      for (const f of files) {
-        // Validate file type
-        if (!["application/pdf", "text/plain", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(f.type)) {
-          showToast(`❌ Invalid file type: ${f.name}`, "error");
-          continue;
-        }
-
-        // Validate file size
-        if (f.size > MAX_FILE_SIZE) {
-          showToast(`❌ File too large: ${f.name}`, "error");
-          continue;
-        }
-
-        uploadedFiles.push(f);
-      }
-      renderFileList();
-    }
-
-    function renderFileList() {
-      const list = document.getElementById("fileList");
-      list.innerHTML = "";
-
-      if (uploadedFiles.length === 0) {
-        list.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 20px;">No files selected</p>';
-        document.getElementById("uploadBtn").disabled = true;
-        return;
-      }
-
-      uploadedFiles.forEach((f, i) => {
-        const sizeMB = (f.size / 1024 / 1024).toFixed(2);
-        list.innerHTML += `
-      <div class="file-item">
-        <div class="file-ext">${f.name.split(".").pop().toUpperCase()}</div>
-        <div>
-          <div class="file-name">${f.name}</div>
-          <div class="file-size">${sizeMB} MB</div>
-        </div>
-        <button class="remove-btn" onclick="removeFile(${i})" title="Remove file">×</button>
-      </div>`;
-      });
-
-      document.getElementById("uploadBtn").disabled = false;
-    }
-
-    function removeFile(index) {
-      uploadedFiles.splice(index, 1);
-      renderFileList();
-    }
-
-    // ─────────────────────────────────────────
-    // STEP NAVIGATION
-    // ─────────────────────────────────────────
-
-    function goStep(n) {
+    # 3. Update goStep logic
+    new_goStep = """function goStep(n) {
       currentStep = n;
 
       document.querySelectorAll(".panel").forEach((p, i) => {
@@ -927,69 +689,30 @@
         const percent = ((n - 1) / 3) * 80;
         line.style.width = percent + '%';
       }
-    }
+    }"""
+    content = re.sub(r'function goStep\(n\)\s*{.*?}', new_goStep, content, flags=re.DOTALL)
 
-    // ─────────────────────────────────────────
-    // NOTIFICATIONS
-    // ─────────────────────────────────────────
-
-    function showToast(msg, type = "info") {
-      const t = document.getElementById("toast");
-      t.textContent = msg;
-      t.className = type;
-      t.classList.add("show");
-
-      setTimeout(() => {
-        t.classList.remove("show");
-      }, 3000);
-    }
-
-    // ─────────────────────────────────────────
-    // UPLOAD FILES
-    // ─────────────────────────────────────────
-
-    async function uploadFiles() {
-      if (uploadedFiles.length === 0) {
-        showToast("❌ Please select files first", "error");
-        return;
-      }
-
-      isLoading = true;
-      updateButtonState();
-
-      try {
-        const form = new FormData();
-        uploadedFiles.forEach(f => form.append("files", f));
-
-        const res = await fetch(API + "/upload", {
-          method: "POST",
-          body: form
-        });
-
-        if (!res.ok) {
-          throw new Error("Upload failed: " + res.statusText);
-        }
-
-        const data = await res.json();
-        serverFileNames = data.uploaded.map(f => f.name);
-
-        showToast("✅ Files uploaded successfully!", "success");
-        await analyzeTopics();
-
-      } catch (error) {
-        showToast("❌ Upload error: " + error.message, "error");
-        console.error("Upload error:", error);
-      } finally {
-        isLoading = false;
-        updateButtonState();
+    # 4. Add showSkeletons utility
+    skeletons_code = """function showSkeletons(containerId, count) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+      for (let i = 0; i < count; i++) {
+        container.innerHTML += `
+          <div class="topic-card">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text short"></div>
+          </div>
+        `;
       }
     }
+"""
+    if 'function showSkeletons' not in content:
+        content = content.replace('function escapeHtml(text)', skeletons_code + '\n    function escapeHtml(text)')
 
-    // ─────────────────────────────────────────
-    // ANALYZE TOPICS
-    // ─────────────────────────────────────────
-
-    async function analyzeTopics() {
+    # 5. Update analyzeTopics to use skeletons
+    new_analyze = """async function analyzeTopics() {
       isLoading = true;
       updateButtonState();
       showSkeletons("topicsGrid", 3);
@@ -1021,18 +744,11 @@
         isLoading = false;
         updateButtonState();
       }
-    }
+    }"""
+    content = re.sub(r'async function analyzeTopics\(\)\s*{.*?finally\s*{.*?}\s*}', new_analyze, content, flags=re.DOTALL)
 
-    // ─────────────────────────────────────────
-    // MERGE NOTES
-    // ─────────────────────────────────────────
-
-    async function goMergeStep() {
-      goStep(3);
-      await mergeNotes();
-    }
-
-    async function mergeNotes() {
+    # 6. Update mergeNotes to use skeletons
+    new_merge = """async function mergeNotes() {
       isLoading = true;
       updateButtonState();
       showSkeletons("mergedGrid", 3);
@@ -1064,152 +780,11 @@
         isLoading = false;
         updateButtonState();
       }
-    }
+    }"""
+    content = re.sub(r'async function mergeNotes\(\)\s*{.*?finally\s*{.*?}\s*}', new_merge, content, flags=re.DOTALL)
 
-    // ─────────────────────────────────────────
-    // RENDER TOPICS
-    // ─────────────────────────────────────────
+    # Write changes
+    with open('inex.html', 'w', encoding='utf-8') as f:
+        f.write(content)
 
-    function renderTopics(topics, containerId) {
-      const container = document.getElementById(containerId);
-      container.innerHTML = "";
-
-      if (!topics || topics.length === 0) {
-        container.innerHTML = '<p style="color: var(--muted);">No topics found</p>';
-        return;
-      }
-
-      topics.forEach(t => {
-        const card = document.createElement("div");
-        card.className = "topic-card";
-        card.innerHTML = `
-      <div class="topic-title">${escapeHtml(t.topic || "Unknown Topic")}</div>
-      <div class="topic-text">${escapeHtml(t.merged_text || "No content")}</div>
-    `;
-        container.appendChild(card);
-      });
-    }
-
-    // ─────────────────────────────────────────
-    // FILE DOWNLOAD
-    // ─────────────────────────────────────────
-
-    async function downloadFile(filename) {
-      isLoading = true;
-      updateButtonState();
-
-      try {
-        const url = API + "/download/" + filename;
-        window.open(url, "_blank");
-        showToast("✅ Download started!", "success");
-      } catch (error) {
-        showToast("❌ Download error: " + error.message, "error");
-      } finally {
-        isLoading = false;
-        updateButtonState();
-      }
-    }
-
-    // ─────────────────────────────────────────
-    // DEMO DATA
-    // ─────────────────────────────────────────
-
-    function loadDemo() {
-      // Create mock File objects
-      const mockPDF = new File(
-        ["Sample Physics Content about waves, particles, and energy"],
-        "Physics.pdf",
-        { type: "application/pdf" }
-      );
-
-      const mockDOCX = new File(
-        ["Sample Notes on Mechanics, Thermodynamics, and Optics"],
-        "Notes.docx",
-        { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }
-      );
-
-      uploadedFiles = [mockPDF, mockDOCX];
-      renderFileList();
-      showToast("📋 Demo files loaded!", "success");
-    }
-
-    // ─────────────────────────────────────────
-    // RESET APP
-    // ─────────────────────────────────────────
-
-    function resetApp() {
-      uploadedFiles = [];
-      serverFileNames = [];
-      analyzedTopics = [];
-      currentStep = 1;
-      isLoading = false;
-
-      document.getElementById("fileList").innerHTML = "";
-      document.getElementById("topicsGrid").innerHTML = "";
-      document.getElementById("mergedGrid").innerHTML = "";
-      document.getElementById("mergeBtn").disabled = true;
-      document.getElementById("uploadBtn").disabled = true;
-
-      goStep(1);
-      showToast("🔄 App reset. Ready for new analysis!", "success");
-    }
-
-    // ─────────────────────────────────────────
-    // BUTTON STATE MANAGEMENT
-    // ─────────────────────────────────────────
-
-    function updateButtonState() {
-      const uploadBtn = document.getElementById("uploadBtn");
-      const mergeBtn = document.getElementById("mergeBtn");
-      const demoBtn = document.getElementById("demoBtn");
-
-      if (isLoading) {
-        uploadBtn.innerHTML = '<span class="spinner"></span> Uploading...';
-        uploadBtn.disabled = true;
-        mergeBtn.innerHTML = '<span class="spinner"></span> Processing...';
-        mergeBtn.disabled = true;
-        demoBtn.disabled = true;
-      } else {
-        uploadBtn.innerHTML = '<span id="uploadBtnText">⬆ Upload</span>';
-        uploadBtn.disabled = uploadedFiles.length === 0;
-        mergeBtn.innerHTML = '<span id="mergeBtnText">⚡ Proceed to Merge</span>';
-        mergeBtn.disabled = analyzedTopics.length === 0;
-        demoBtn.disabled = false;
-      }
-    }
-
-    // ─────────────────────────────────────────
-    // UTILITY FUNCTIONS
-    // ─────────────────────────────────────────
-
-    function showSkeletons(containerId, count) {
-      const container = document.getElementById(containerId);
-      container.innerHTML = "";
-      for (let i = 0; i < count; i++) {
-        container.innerHTML += `
-          <div class="topic-card">
-            <div class="skeleton skeleton-title"></div>
-            <div class="skeleton skeleton-text"></div>
-            <div class="skeleton skeleton-text"></div>
-            <div class="skeleton skeleton-text short"></div>
-          </div>
-        `;
-      }
-    }
-
-    function escapeHtml(text) {
-      const map = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-      };
-      return text.replace(/[&<>"']/g, m => map[m]);
-    }
-
-  </script>
-
-</body>
-
-</html>
+update_html()
