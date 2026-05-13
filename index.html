@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudY MateriaL RedundancY AnalyseR ~ StudYSynC - Smart Study Material Analyzer</title>
+
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+
+<body>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-container">
+      <div class="logo">
+        <h1>📚 StudY MateriaL RedundancY AnalyseR ~ StudYSynC</h1>
+        <p class="tagline">Smart PDF Analysis & Redundancy Remover</p>
+      </div>
+      <div class="header-status">
+        <span id="serverStatus" class="status-indicator">●</span>
+        <span id="statusText">Checking...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <div class="container">
+    <!-- SIDEBAR LEFT -->
+    <aside class="sidebar sidebar-left">
+      <nav class="nav-tabs">
+        <button class="tab-btn active" data-tab="upload">
+          📤 Upload
+        </button>
+        <button class="tab-btn" data-tab="files">
+          📁 My Files
+        </button>
+        <button class="tab-btn" data-tab="merge">
+          🔗 Smart Merge
+        </button>
+        <button class="tab-btn" data-tab="analysis">
+          📊 Analysis
+        </button>
+        <button class="tab-btn" data-tab="flashcards">
+          🎴 Flashcards
+        </button>
+        <button class="tab-btn" data-tab="quiz">
+          ❓ Quiz
+        </button>
+        <button class="tab-btn" data-tab="tools">
+          🛠️ Tools
+        </button>
+      </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <!-- UPLOAD TAB -->
+      <section id="upload" class="tab-content active">
+        <div class="card">
+          <h2>Upload Study Materials</h2>
+          <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📄</div>
+            <h3>Drag & Drop Files Here</h3>
+            <p>or click to select</p>
+            <input type="file" id="fileInput" multiple accept=".pdf,.docx,.txt" style="display: none;">
+          </div>
+          <div class="upload-info">
+            <p>✓ Supported: PDF, DOCX, TXT</p>
+            <p>✓ Max size: No limit</p>
+            <p>✓ Multiple files supported</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- FILES TAB -->
+      <section id="files" class="tab-content">
+        <div class="card">
+          <h2>My Uploaded Files</h2>
+          <div id="filesList" class="files-list">
+            <p class="empty-state">No files uploaded yet</p>
+          </div>
+          <button id="clearBtn" class="btn btn-danger" style="display: none;">
+            Clear All Files
+          </button>
+        </div>
+      </section>
+
+      <!-- MERGE TAB -->
+      <section id="merge" class="tab-content">
+        <div class="card">
+          <h2>Smart Merge - Remove Redundancy</h2>
+          <div class="form-group">
+            <label>Select Files to Merge:</label>
+            <div id="mergeFileList" class="file-checkboxes">
+              <p class="empty-state">No files available</p>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Output Format:</label>
+            <div class="radio-group">
+              <label class="radio">
+                <input type="radio" name="format" value="pdf" checked>
+                📄 PDF (Formatted)
+              </label>
+              <label class="radio">
+                <input type="radio" name="format" value="txt">
+                📝 TXT (Plain Text)
+              </label>
+            </div>
+          </div>
+          <button id="mergeBtn" class="btn btn-primary">
+            🔗 Smart Merge
+          </button>
+          <div id="mergeResult" class="result-box" style="display: none;">
+            <h3>Merge Results</h3>
+            <p id="mergeStats"></p>
+            <button id="downloadMerge" class="btn btn-success">
+              ⬇️ Download Result
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ANALYSIS TAB -->
+      <section id="analysis" class="tab-content">
+        <div class="card">
+          <h2>Analysis Tools</h2>
+          <div class="analysis-grid">
+            <!-- Summary -->
+            <div class="analysis-card">
+              <h3>📝 Summary</h3>
+              <div class="form-group">
+                <label>Select File:</label>
+                <select id="summaryFile" class="file-select">
+                  <option>Choose file...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Sentences:</label>
+                <input type="number" id="summaryCount" value="5" min="1" max="20">
+              </div>
+              <button class="btn btn-primary" onclick="generateSummary()">Generate</button>
+              <div id="summaryResult" class="result-box" style="display: none;"></div>
+            </div>
+
+            <!-- Keywords -->
+            <div class="analysis-card">
+              <h3>🔑 Keywords</h3>
+              <div class="form-group">
+                <label>Select File:</label>
+                <select id="keywordsFile" class="file-select">
+                  <option>Choose file...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Top N:</label>
+                <input type="number" id="keywordsCount" value="15" min="1" max="50">
+              </div>
+              <button class="btn btn-primary" onclick="generateKeywords()">Extract</button>
+              <div id="keywordsResult" class="result-box" style="display: none;"></div>
+            </div>
+
+            <!-- Important Lines -->
+            <div class="analysis-card">
+              <h3>⭐ Important Lines</h3>
+              <div class="form-group">
+                <label>Select File:</label>
+                <select id="linesFile" class="file-select">
+                  <option>Choose file...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Top N:</label>
+                <input type="number" id="linesCount" value="20" min="1" max="50">
+              </div>
+              <button class="btn btn-primary" onclick="generateImportantLines()">Extract</button>
+              <div id="linesResult" class="result-box" style="display: none;"></div>
+            </div>
+
+            <!-- Search -->
+            <div class="analysis-card">
+              <h3>🔍 Search</h3>
+              <div class="form-group">
+                <label>Search Query:</label>
+                <input type="text" id="searchQuery" placeholder="e.g., Newton's Law">
+              </div>
+              <button class="btn btn-primary" onclick="performSearch()">Search</button>
+              <div id="searchResult" class="result-box" style="display: none;"></div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="analysis-card">
+              <h3>📊 Statistics</h3>
+              <div class="form-group">
+                <label>Select File:</label>
+                <select id="statsFile" class="file-select">
+                  <option>Choose file...</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" onclick="generateStats()">Analyze</button>
+              <div id="statsResult" class="result-box" style="display: none;"></div>
+            </div>
+
+            <!-- Compare -->
+            <div class="analysis-card">
+              <h3>🔀 Compare Files</h3>
+              <div class="form-group">
+                <label>File 1:</label>
+                <select id="compareFile1" class="file-select">
+                  <option>Choose file...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>File 2:</label>
+                <select id="compareFile2" class="file-select">
+                  <option>Choose file...</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" onclick="compareFiles()">Compare</button>
+              <div id="compareResult" class="result-box" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FLASHCARDS TAB -->
+      <section id="flashcards" class="tab-content">
+        <div class="card">
+          <h2>📚 Generate Flashcards</h2>
+          <div class="form-group">
+            <label>Select File:</label>
+            <select id="flashcardsFile" class="file-select">
+              <option>Choose file...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Number of Cards:</label>
+            <input type="number" id="flashcardsCount" value="10" min="1" max="50">
+          </div>
+          <button class="btn btn-primary" onclick="generateFlashcards()">Generate</button>
+
+          <div id="flashcardsContainer" style="display: none;">
+            <div class="flashcards-stats">
+              <span id="cardProgress">Card 1 of 10</span>
+              <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+              </div>
+            </div>
+
+            <div class="flashcard" id="flashcard">
+              <div class="flashcard-inner">
+                <div class="flashcard-front">
+                  <p id="cardQuestion">Question</p>
+                </div>
+                <div class="flashcard-back">
+                  <p id="cardAnswer">Answer</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="flashcard-controls">
+              <button class="btn btn-secondary" onclick="previousCard()">← Previous</button>
+              <button class="btn btn-info" onclick="toggleFlashcard()">🔄 Flip</button>
+              <button class="btn btn-secondary" onclick="nextCard()">Next →</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- QUIZ TAB -->
+      <section id="quiz" class="tab-content">
+        <div class="card">
+          <h2>❓ Take a Quiz</h2>
+          <div class="form-group">
+            <label>Select File:</label>
+            <select id="quizFile" class="file-select">
+              <option>Choose file...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Number of Questions:</label>
+            <input type="number" id="quizCount" value="5" min="1" max="20">
+          </div>
+          <button class="btn btn-primary" onclick="generateQuiz()">Start Quiz</button>
+
+          <div id="quizContainer" style="display: none;">
+            <div class="quiz-stats">
+              <span id="quizProgress">Question 1 of 5</span>
+              <span id="quizScore">Score: 0/5</span>
+            </div>
+
+            <div class="quiz-question-box">
+              <h3 id="quizQuestion">Question</h3>
+              <div id="quizOptions" class="quiz-options">
+                <!-- Options will be inserted here -->
+              </div>
+              <button class="btn btn-primary" onclick="nextQuestion()" id="nextQuizBtn" style="display: none;">
+                Next Question
+              </button>
+            </div>
+
+            <button class="btn btn-success" onclick="submitQuiz()" id="submitQuizBtn" style="display: none;">
+              Submit Quiz
+            </button>
+
+            <div id="quizResults" style="display: none;">
+              <h3>Quiz Results</h3>
+              <p id="finalScore"></p>
+              <button class="btn btn-primary" onclick="retakeQuiz()">Retake Quiz</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TOOLS TAB -->
+      <section id="tools" class="tab-content">
+        <div class="card">
+          <h2>🛠️ Additional Tools</h2>
+          <div class="tools-grid">
+            <div class="tool-card">
+              <h3>Export to Word</h3>
+              <p>Export merged notes as DOCX file</p>
+              <button class="btn btn-primary" onclick="exportToWord()">Export</button>
+            </div>
+            <div class="tool-card">
+              <h3>Clear Everything</h3>
+              <p>Delete all uploaded and generated files</p>
+              <button class="btn btn-danger" onclick="clearAllData()">Clear</button>
+            </div>
+            <div class="tool-card">
+              <h3>Server Status</h3>
+              <p>Check backend health and library status</p>
+              <button class="btn btn-info" onclick="checkServerHealth()">Check</button>
+              <div id="healthResult" style="display: none; margin-top: 10px;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- SIDEBAR RIGHT -->
+    <aside class="sidebar sidebar-right">
+      <div class="card">
+        <h3>📋 Quick Info</h3>
+        <div id="quickInfo">
+          <p><strong>Files:</strong> <span id="fileCount">0</span></p>
+          <p><strong>Status:</strong> <span id="statusInfo">Ready</span></p>
+        </div>
+      </div>
+      <div class="card">
+        <h3>💡 Tips</h3>
+        <ul class="tips-list">
+          <li>Upload multiple PDFs to merge</li>
+          <li>Smart merge removes duplicates automatically</li>
+          <li>Generate flashcards for quick review</li>
+          <li>Take quizzes to test knowledge</li>
+          <li>Export notes as Word documents</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <!-- NOTIFICATION SYSTEM -->
+  <div id="notifications" class="notifications"></div>
+
+  <!-- LOADING OVERLAY -->
+  <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+    <div class="spinner"></div>
+    <p id="loadingText">Processing...</p>
+  </div>
+
+  <!-- JS FILES - CORRECT ORDER -->
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/features/upload.js"></script>
+  <script src="js/features/merge.js"></script>
+  <script src="js/features/analysis.js"></script>
+  <script src="js/features/flashcards.js"></script>
+  <script src="js/features/quiz.js"></script>
+  <script src="js/main.js"></script>
+</body>
+
+</html>
